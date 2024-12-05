@@ -10,8 +10,14 @@ pub trait Hittable {
 #[derive(Debug, Clone, Copy)]
 pub struct HitRecord {
     pub point: Vec3,      // 交点
-    pub normal: Vec3,     // 交点处的物体表面法向量
+    pub normal: Vec3,     // 交点处的物体表面法向量，是单位向量
     pub t: f32,           // 碰撞时间
+}
+
+impl HitRecord {
+    pub fn new(point: Vec3, normal: Vec3, t: f32) -> Self {
+        Self { point, normal: normal.normalize(), t }
+    }
 }
 
 // 球体结构体，用于测试
@@ -55,7 +61,7 @@ impl Hittable for Sphere {
 
             let point = ray.at(root);
             let normal = (point - self.center) / self.radius;
-            return Some(HitRecord { point, normal, t: root });
+            return Some(HitRecord::new(point, normal, root));
         }
         None
     }

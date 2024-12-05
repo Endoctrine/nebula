@@ -3,7 +3,7 @@ use glam::Vec3;
 #[derive(Debug, Copy, Clone)]
 pub struct Ray {
     pub origin: Vec3,
-    pub direction: Vec3,
+    pub direction: Vec3, // 方向单位向量
 }
 
 impl Ray {

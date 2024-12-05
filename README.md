@@ -17,7 +17,9 @@ Nebula 是一个光线追踪渲染器。Nebula 的开发将会分以下几个阶
   - - [ ] 实现着色
 - - [ ] 将渲染结果保存为图片
 
+Nebula 的场景坐标系与 Bevy 引擎一致
 
+![common_coordinate_system.png](./img/common_coordinate_system.png)
 
 ## Stage 2
 

@@ -5,7 +5,10 @@ use crate::scene::Scene;
 use crate::camera::Camera;
 use crate::ray::Ray;
 
-pub fn render(scene: &Scene, camera: &Camera, image_width: u32, image_height: u32) -> Vec<u8> {
+const T_MIN: f32 = 0.1;
+const T_MAX: f32 = 100.0;
+
+pub fn render(scene: &mut Scene, camera: &Camera, image_width: u32, image_height: u32) -> Vec<u8> {
     let mut image_data = Vec::with_capacity((image_width * image_height * 3) as usize);
 
     // 从左到右，从上到下进行渲染
@@ -26,9 +29,7 @@ pub fn render(scene: &Scene, camera: &Camera, image_width: u32, image_height: u3
 }
 
 // 简单的光线颜色计算（无材质，只有背景）
-fn ray_color(ray: &Ray, scene: &Scene) -> Vec3 {
-    const T_MIN: f32 = 0.1;
-    const T_MAX: f32 = 100.0;
+fn ray_color(ray: &Ray, scene: &mut Scene) -> Vec3 {
     if let Some(hit) = scene.hit(ray, T_MIN, T_MAX) {
         return hit.normal.dot(-ray.direction).clamp(0.0, 1.0) * Vec3::ONE; // 返回法线的着色
     }

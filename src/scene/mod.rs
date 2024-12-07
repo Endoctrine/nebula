@@ -1,9 +1,14 @@
+mod bvh;
+
+use std::rc::Rc;
 use glam::Vec3;
 use crate::ray::Ray;
+use crate::scene::bvh::*;
 
 // 定义一个表示光线与物体碰撞的 trait
 pub trait Hittable {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
+    fn bounding_box(&self) -> AABB;
 }
 
 // 记录光线与物体的碰撞信息
@@ -65,34 +70,47 @@ impl Hittable for Sphere {
         }
         None
     }
+
+    fn bounding_box(&self) -> AABB {
+        AABB::new(
+            self.center - Vec3::new(self.radius, self.radius, self.radius),
+            self.center + Vec3::new(self.radius, self.radius, self.radius),
+        )
+    }
 }
 
 // 场景结构体
 pub struct Scene {
-    pub objects: Vec<Box<dyn Hittable>>,
+    pub objects: Vec<Rc<dyn Hittable>>,
+    pub bvh: Option<BVHNode>,
 }
 
 impl Scene {
+    const MAX_OBJECTS_PER_BVH_LEAF: usize = 5;
+
     pub fn new() -> Self {
-        Scene { objects: Vec::new() }
+        Scene { objects: Vec::new(), bvh: None }
     }
 
     // 将物体添加到场景中
     pub fn add(&mut self, object: Box<dyn Hittable>) {
-        self.objects.push(object);
+        self.objects.push(object.into());
+        self.bvh = None;
+    }
+
+    fn build_bvh(&mut self) {
+        self.bvh = Some(BVHNode::build(&mut self.objects, Self::MAX_OBJECTS_PER_BVH_LEAF));
     }
 
     // 检查光线与场景中的物体是否碰撞，返回最早发生的碰撞
-    pub fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
-        let mut earliest_hit: Option<HitRecord> = None; // 记录最早发生的碰撞
-        let mut t = t_max;
-
-        for object in &self.objects {
-            if let Some(hit) = object.hit(ray, t_min, t) {
-                earliest_hit = Some(hit);
-                t = hit.t;
-            }
+    pub fn hit(&mut self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+        if self.bvh.is_none() {
+            self.build_bvh();
         }
-        earliest_hit
+        if let Some(bvh) = &self.bvh {
+            bvh.hit(ray, t_min, t_max)
+        } else {
+            unreachable!()
+        }
     }
 }

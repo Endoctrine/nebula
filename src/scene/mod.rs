@@ -2,6 +2,7 @@ mod bvh;
 
 use std::rc::Rc;
 use glam::Vec3;
+use crate::material::Material;
 use crate::ray::Ray;
 use crate::scene::bvh::*;
 
@@ -9,6 +10,7 @@ use crate::scene::bvh::*;
 pub trait Hittable {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
     fn bounding_box(&self) -> AABB;
+    fn material(&self) -> Material;
 }
 
 // 记录光线与物体的碰撞信息
@@ -17,11 +19,12 @@ pub struct HitRecord {
     pub point: Vec3,      // 交点
     pub normal: Vec3,     // 交点处的物体表面法向量，是单位向量
     pub t: f32,           // 碰撞时间
+    pub material: Material, // 碰撞点颜色
 }
 
 impl HitRecord {
-    pub fn new(point: Vec3, normal: Vec3, t: f32) -> Self {
-        Self { point, normal: normal.normalize(), t }
+    pub fn new(point: Vec3, normal: Vec3, t: f32, material: Material) -> Self {
+        Self { point, normal: normal.normalize(), t, material }
     }
 }
 
@@ -30,11 +33,12 @@ impl HitRecord {
 pub struct Sphere {
     pub center: Vec3,  // 球心
     pub radius: f32,   // 半径
+    pub material: Material, // 材质
 }
 
 impl Sphere {
-    pub fn new(center: Vec3, radius: f32) -> Self {
-        Sphere { center, radius }
+    pub fn new(center: Vec3, radius: f32, material: Material) -> Self {
+        Sphere { center, radius, material }
     }
 }
 
@@ -66,7 +70,7 @@ impl Hittable for Sphere {
 
             let point = ray.at(root);
             let normal = (point - self.center) / self.radius;
-            return Some(HitRecord::new(point, normal, root));
+            return Some(HitRecord::new(point, normal, root, self.material()));
         }
         None
     }
@@ -76,6 +80,10 @@ impl Hittable for Sphere {
             self.center - Vec3::new(self.radius, self.radius, self.radius),
             self.center + Vec3::new(self.radius, self.radius, self.radius),
         )
+    }
+
+    fn material(&self) -> Material {
+        self.material
     }
 }
 

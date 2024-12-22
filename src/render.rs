@@ -3,42 +3,64 @@ use std::io::Write;
 use glam::Vec3;
 use crate::scene::Scene;
 use crate::camera::Camera;
+use crate::rand_util::random_unit_tent;
 use crate::ray::Ray;
 
-const T_MIN: f32 = 0.1;
+const T_MIN: f32 = 0.001;
 const T_MAX: f32 = 100.0;
+const DEPTH: u32 = 5;
+const SAMPLES_PER_PIXEL: u32 = 100;
 
 pub fn render(scene: &mut Scene, camera: &Camera, image_width: u32, image_height: u32) -> Vec<u8> {
-    let mut image_data = Vec::with_capacity((image_width * image_height * 3) as usize);
+    let mut image_data_raw = Vec::with_capacity((image_width * image_height * 3) as usize);
 
     // 从左到右，从上到下进行渲染
     for j in (0..image_height).rev() {
         for i in 0..image_width {
             let mut color = Vec3::ZERO;
-            let u = (i as f32 + 0.5) / image_width as f32;
-            let v = (j as f32 + 0.5) / image_height as f32;
-            let ray = camera.get_ray(u, v);
-            color += ray_color(&ray, scene);
-            image_data.push((color.x * 255.99) as u8); // R
-            image_data.push((color.y * 255.99) as u8); // G
-            image_data.push((color.z * 255.99) as u8); // B
+            for _ in 0..SAMPLES_PER_PIXEL {
+                // 在一个像素内进行采样
+                let shift_u = random_unit_tent();
+                let shift_v = random_unit_tent();
+                let u = (i as f32 + shift_u) / image_width as f32;
+                let v = (j as f32 + shift_v) / image_height as f32;
+                let ray = camera.get_ray(u, v);
+                color += ray_color(&ray, scene, 0);
+            }
+            color /= SAMPLES_PER_PIXEL as f32;
+            color = color.clamp(Vec3::ZERO, Vec3::ONE);
+            image_data_raw.push(color.x); // R
+            image_data_raw.push(color.y); // G
+            image_data_raw.push(color.z); // B
         }
     }
 
-    image_data
+    image_data_raw.iter().map(|x| { (x * 255.99) as u8 }).collect::<Vec<_>>()
 }
 
-// 简单的光线颜色计算（无材质，只有背景）
-fn ray_color(ray: &Ray, scene: &mut Scene) -> Vec3 {
+/// 光线颜色计算
+fn ray_color(ray: &Ray, scene: &mut Scene, depth: u32) -> Vec3 {
     if let Some(hit) = scene.hit(ray, T_MIN, T_MAX) {
-        return hit.normal.dot(-ray.direction).clamp(0.0, 1.0) * Vec3::ONE; // 返回法线的着色
+        let m = hit.material;
+        let mut color = m.ambient_color() + m.emissive_color(ray, hit.normal);
+        // 如果弹射次数大于设定的次数，就不再弹射了
+        if depth > DEPTH {
+            return color;
+        }
+        // 光线照射到物体后被分散为若干光线
+        let scattered_rays = m.scatter(ray, hit);
+        for scattered_ray in &scattered_rays {
+            color += ray_color(&scattered_ray.ray, scene, depth + 1) * scattered_ray.coefficient;
+        }
+        return color;
     }
-    // 背景颜色
-    let t = 0.5 * (ray.direction.y + 1.0);
-    (1.0 - t) * Vec3::ONE + t * Vec3::new(0.5, 0.7, 1.0)
+
+    // 背景颜色为黑色
+    Vec3::ZERO
 }
 
-// 将渲染结果保存为 PPM 文件
+
+/// 将渲染结果保存为 PPM 文件
 pub fn save_image_as_ppm(image_data: Vec<u8>, width: u32, height: u32, filename: &str) {
     let mut file = File::create(filename).unwrap();
     writeln!(file, "P6\n{} {}\n255", width, height).unwrap();

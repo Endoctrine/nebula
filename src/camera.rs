@@ -1,5 +1,6 @@
-use glam::{Vec2, Vec3};
+use glam::{Vec3};
 use crate::ray::Ray;
+use crate::rand_util;
 
 /// 摄像机，使用薄透镜模型
 #[derive(Debug)]
@@ -54,7 +55,7 @@ impl Camera {
 
     /// 根据像素位置生成光线
     pub fn get_ray(&self, horizontal_ratio: f32, vertical_ratio: f32) -> Ray {
-        let random_in_lens = self.lens_radius * random_in_unit_disk();
+        let random_in_lens = self.lens_radius * rand_util::random_in_unit_disk();
         let offset = self.u * random_in_lens.x + self.v * random_in_lens.y;
 
         // 焦平面上任意一点发出的光经薄透镜折射后，光的方向与透镜光心与该点连线平行
@@ -64,15 +65,5 @@ impl Camera {
             - self.origin;
 
         Ray::new(self.origin + offset, direction)
-    }
-}
-
-/// 生成单位圆盘内的均匀采样，用于景深
-fn random_in_unit_disk() -> Vec2 {
-    loop {
-        let p = Vec2::new(rand::random::<f32>(), rand::random::<f32>());
-        if p.length_squared() < 1.0 {
-            return p;
-        }
     }
 }

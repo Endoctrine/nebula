@@ -24,9 +24,9 @@ pub fn random_in_unit_disk() -> Vec2 {
 /// 生成随机单位向量
 pub fn random_unit_vector() -> Vec3 {
     loop {
-        let x: f32 = rand::random::<f32>();
-        let y: f32 = rand::random::<f32>();
-        let z: f32 = rand::random::<f32>();
+        let x: f32 = rand::random::<f32>() - 0.5;
+        let y: f32 = rand::random::<f32>() - 0.5;
+        let z: f32 = rand::random::<f32>() - 0.5;
         let vector = Vec3 { x, y, z };
         if vector.length_squared() > f32::EPSILON {
             return vector.normalize();

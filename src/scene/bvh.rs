@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 use glam::Vec3;
 use crate::ray::Ray;
 use crate::scene::{HitRecord, Hittable};
@@ -60,12 +60,12 @@ impl AABB {
 
 pub enum BVHNode {
     Internal { left: Box<BVHNode>, right: Box<BVHNode>, bbox: AABB },
-    Leaf { objects: Vec<Rc<dyn Hittable>>, bbox: AABB },
+    Leaf { objects: Vec<Arc<dyn Hittable + Sync + Send>>, bbox: AABB },
 }
 
 impl BVHNode {
     // 构建 BVH
-    pub fn build(objects: &mut [Rc<dyn Hittable>], max_objects_per_leaf: usize) -> Self {
+    pub fn build(objects: &mut [Arc<dyn Hittable + Sync + Send>], max_objects_per_leaf: usize) -> Self {
         if objects.len() <= max_objects_per_leaf {
             let mut bbox = objects[0].bounding_box();
             for object in objects.iter() {
@@ -137,6 +137,7 @@ impl BVHNode {
             BVHNode::Internal { left, right, .. } => {
                 let mut closest_hit = None;
                 let mut closest_t = t_max;
+
 
                 if let Some(hit) = left.hit(ray, t_min, closest_t) {
                     closest_hit = Some(hit);

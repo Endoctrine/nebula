@@ -1,6 +1,6 @@
 mod bvh;
 
-use std::rc::Rc;
+use std::sync::Arc;
 use glam::Vec3;
 use crate::material::Material;
 use crate::ray::Ray;
@@ -89,7 +89,7 @@ impl Hittable for Sphere {
 
 // 场景结构体
 pub struct Scene {
-    pub objects: Vec<Rc<dyn Hittable>>,
+    pub objects: Vec<Arc<dyn Hittable + Sync + Send>>,
     pub bvh: Option<BVHNode>,
 }
 
@@ -101,20 +101,18 @@ impl Scene {
     }
 
     // 将物体添加到场景中
-    pub fn add(&mut self, object: Box<dyn Hittable>) {
+    pub fn add(&mut self, object: Box<dyn Hittable + Sync + Send>) {
         self.objects.push(object.into());
         self.bvh = None;
     }
 
-    fn build_bvh(&mut self) {
+    pub fn build_bvh(&mut self) {
         self.bvh = Some(BVHNode::build(&mut self.objects, Self::MAX_OBJECTS_PER_BVH_LEAF));
     }
 
     // 检查光线与场景中的物体是否碰撞，返回最早发生的碰撞
-    pub fn hit(&mut self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
-        if self.bvh.is_none() {
-            self.build_bvh();
-        }
+    pub fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+        assert!(!self.bvh.is_none());
         if let Some(bvh) = &self.bvh {
             bvh.hit(ray, t_min, t_max)
         } else {

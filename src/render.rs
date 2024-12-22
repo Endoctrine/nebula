@@ -1,5 +1,7 @@
 use std::fs::File;
 use std::io::Write;
+use std::sync::{Arc, Mutex};
+use rayon::prelude::*;
 use glam::Vec3;
 use crate::scene::Scene;
 use crate::camera::Camera;
@@ -8,14 +10,18 @@ use crate::ray::Ray;
 
 const T_MIN: f32 = 0.001;
 const T_MAX: f32 = 100.0;
-const DEPTH: u32 = 5;
+const DEPTH: u32 = 1;
 const SAMPLES_PER_PIXEL: u32 = 100;
 
-pub fn render(scene: &mut Scene, camera: &Camera, image_width: u32, image_height: u32) -> Vec<u8> {
-    let mut image_data_raw = Vec::with_capacity((image_width * image_height * 3) as usize);
+pub fn render(scene: Arc<Scene>, camera: Arc<Camera>, image_width: u32, image_height: u32) -> Vec<u8> {
+    let image_data_raw = vec![0.0; (image_width * image_height * 3) as usize];
+    let image_data_raw = Arc::new(Mutex::new(image_data_raw));
 
-    // 从左到右，从上到下进行渲染
-    for j in (0..image_height).rev() {
+    (0..image_height).rev().collect::<Vec<_>>().par_iter().map(|j| {
+        let j = *j;
+        let image_data_raw = image_data_raw.clone();
+        let scene = scene.clone();
+        let camera = camera.clone();
         for i in 0..image_width {
             let mut color = Vec3::ZERO;
             for _ in 0..SAMPLES_PER_PIXEL {
@@ -25,21 +31,23 @@ pub fn render(scene: &mut Scene, camera: &Camera, image_width: u32, image_height
                 let u = (i as f32 + shift_u) / image_width as f32;
                 let v = (j as f32 + shift_v) / image_height as f32;
                 let ray = camera.get_ray(u, v);
-                color += ray_color(&ray, scene, 0);
+                color += ray_color(&ray, &*scene, 0); // !!!
             }
             color /= SAMPLES_PER_PIXEL as f32;
             color = color.clamp(Vec3::ZERO, Vec3::ONE);
-            image_data_raw.push(color.x); // R
-            image_data_raw.push(color.y); // G
-            image_data_raw.push(color.z); // B
+            let mut image_data_raw = image_data_raw.lock().unwrap();
+            image_data_raw[((i + (image_height - 1 - j) * image_width) * 3) as usize] = color.x; // R
+            image_data_raw[((i + (image_height - 1 - j) * image_width) * 3 + 1) as usize] = color.y; // G
+            image_data_raw[((i + (image_height - 1 - j) * image_width) * 3 + 2) as usize] = color.z; // B
         }
-    }
+    }).collect::<()>();
 
-    image_data_raw.iter().map(|x| { (x * 255.99) as u8 }).collect::<Vec<_>>()
+    let image_data_raw = image_data_raw.lock().unwrap();
+    (&*image_data_raw).iter().map(|x| { (x * 255.99) as u8 }).collect::<Vec<_>>()
 }
 
 /// 光线颜色计算
-fn ray_color(ray: &Ray, scene: &mut Scene, depth: u32) -> Vec3 {
+fn ray_color(ray: &Ray, scene: &Scene, depth: u32) -> Vec3 {
     if let Some(hit) = scene.hit(ray, T_MIN, T_MAX) {
         let m = hit.material;
         let mut color = m.ambient_color() + m.emissive_color(ray, hit.normal);

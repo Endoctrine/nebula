@@ -61,6 +61,18 @@ impl Material {
         optical_density: 1.0,
     };
 
+    // 玻璃
+    pub const GLASS: Self = Self {
+        ambient: Vec3::ZERO,
+        diffuse: Vec3::ZERO,
+        specular: Vec3::new(2.0, 2.0, 2.0),
+        emissive: Vec3::ZERO,
+        transmission_filter: Vec3::ONE,
+        dissolve: 0.9,
+        specular_exponent: 1000.0,
+        optical_density: 1.5,
+    };
+
     /// 入射光线照射到某材质被分散成若干条出射光线
     ///
     /// 入射光颜色 = 出射光线颜色 * 系数 + 自发光颜色 + 环境光颜色
@@ -124,7 +136,7 @@ impl Material {
 
     /// 计算折射光线的方向
     fn refract(&self, ray: &Ray, normal: Vec3) -> Option<Vec3> {
-        let cos_theta = ray.direction.dot(normal).abs();
+        let cos_theta = ray.direction.dot(normal);
         let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
 
         if cos_theta > 0.0 {

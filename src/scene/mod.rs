@@ -6,6 +6,7 @@ use glam::Vec3;
 use crate::material::Material;
 use crate::ray::Ray;
 use crate::scene::bvh::*;
+use primitive::Triangle;
 
 // 定义一个表示光线与物体碰撞的 trait
 pub trait Hittable {
@@ -41,7 +42,31 @@ impl Scene {
         Scene { objects: Vec::new(), bvh: None }
     }
 
-    // 将物体添加到场景中
+    // 将 .obj 模型加载到场景中
+    pub fn add_obj(&mut self, file_path: &str, default_material: Material) {
+        // 读取并解析 .obj 文件
+        let obj_data = tobj::load_obj(file_path, &tobj::GPU_LOAD_OPTIONS)
+            .expect("Failed to load .obj file");
+        let (models, _materials) = obj_data;
+
+        // 将 .obj 中的每个面转换为三角形
+        for mesh in models.iter().map(|model| { &model.mesh }) {
+            for index in mesh.indices.chunks(3) {
+                let i0 = index[0] as usize;
+                let i1 = index[1] as usize;
+                let i2 = index[2] as usize;
+                // 转换为 Vec3
+                let vertex0 = Vec3::from_slice(&mesh.positions[i0 * 3..i0 * 3 + 3]);
+                let vertex1 = Vec3::from_slice(&mesh.positions[i1 * 3..i1 * 3 + 3]);
+                let vertex2 = Vec3::from_slice(&mesh.positions[i2 * 3..i2 * 3 + 3]);
+                // 创建三角形
+                let triangle = Triangle::new(vertex0, vertex1, vertex2, default_material);
+                self.add(Box::new(triangle));
+            }
+        }
+    }
+
+    // 将基本图元添加到场景中
     pub fn add(&mut self, object: Box<dyn Hittable + Sync + Send>) {
         self.objects.push(object.into());
         self.bvh = None;

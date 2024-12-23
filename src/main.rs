@@ -10,53 +10,17 @@ use std::time::Instant;
 use glam::Vec3;
 use crate::camera::Camera;
 use crate::material::Material;
-use crate::rand_util::random_unit_element;
 use crate::scene::{Scene, primitive::*};
 
 fn create_test_scene() -> Scene {
     let mut scene = Scene::new();
 
     let light = Sphere::new(
-        Vec3::new(0.0, 11.4, 0.0),
-        10.0,
+        Vec3::new(0.0, 2.0, 0.0),
+        0.5,
         Material::LUMINOUS,
     );
     scene.add(Box::new(light));
-
-    let left_wall = Sphere::new(
-        Vec3::new(-1e5, 0.0, 0.0),
-        1e5 - 3.0,
-        Material::PLASTER,
-    );
-    scene.add(Box::new(left_wall));
-
-    let right_wall = Sphere::new(
-        Vec3::new(1e5, 0.0, 0.0),
-        1e5 - 3.0,
-        Material::PLASTER,
-    );
-    scene.add(Box::new(right_wall));
-
-    let up_wall = Sphere::new(
-        Vec3::new(0.0, 1e5, 0.0),
-        1e5 - 1.5,
-        Material::PLASTER,
-    );
-    scene.add(Box::new(up_wall));
-
-    let down_wall = Sphere::new(
-        Vec3::new(0.0, -1e5, 0.0),
-        1e5 - 1.5,
-        Material::PLASTER,
-    );
-    scene.add(Box::new(down_wall));
-
-    let back_wall = Sphere::new(
-        Vec3::new(0.0, 0.0, -1e5),
-        1e5 - 3.0,
-        Material::PLASTER,
-    );
-    scene.add(Box::new(back_wall));
 
     // let mirror_sphere = Sphere::new(
     //     Vec3::new(1.0, -1.0, 0.1),
@@ -79,25 +43,15 @@ fn create_test_scene() -> Scene {
     // );
     // scene.add(Box::new(glass_sphere));
 
-    // 在场景中随机生成 300 个三角面
-    for _ in 0..300 {
-        let mut triangle = Triangle::new(
-            rand_util::random_unit_vector(),
-            rand_util::random_unit_vector(),
-            rand_util::random_unit_vector(),
-            Material::PLASTER,
-        );
-        triangle.material.diffuse = random_unit_element();
-        triangle.material.specular = random_unit_element();
-        scene.add(Box::new(triangle));
-    }
+    // 加载测试场景
+    scene.add_obj("scenes/cornell_box/CornellBox-Original.obj", Material::PLASTER);
 
     scene
 }
 
 fn create_camera() -> Camera {
-    let look_from = Vec3::new(0.0, 0.0, 4.0);
-    let look_at = Vec3::new(0.0, 0.0, -1.0);
+    let look_from = Vec3::new(0.0, 1.0, 3.0);
+    let look_at = Vec3::new(0.0, 1.0, -1.0);
     let vup = Vec3::new(0.0, 1.0, 0.0);
 
     Camera::new(look_from, look_at, vup, 60.0, 16.0 / 10.0, 4.0, 0.0)

@@ -11,7 +11,6 @@ use crate::scene::bvh::*;
 pub trait Hittable {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
     fn bounding_box(&self) -> AABB;
-    fn material(&self) -> Material;
 }
 
 // 记录光线与物体的碰撞信息

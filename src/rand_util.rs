@@ -21,6 +21,13 @@ pub fn random_in_unit_disk() -> Vec2 {
     }
 }
 
+pub fn random_unit_element() -> Vec3 {
+    let x: f32 = rand::random::<f32>();
+    let y: f32 = rand::random::<f32>();
+    let z: f32 = rand::random::<f32>();
+    Vec3::new(x, y, z)
+}
+
 /// 生成随机单位向量
 pub fn random_unit_vector() -> Vec3 {
     loop {

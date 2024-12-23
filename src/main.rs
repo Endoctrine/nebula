@@ -10,7 +10,8 @@ use std::time::Instant;
 use glam::Vec3;
 use crate::camera::Camera;
 use crate::material::Material;
-use crate::scene::{Scene, Sphere};
+use crate::rand_util::random_unit_element;
+use crate::scene::{Scene, primitive::*};
 
 fn create_test_scene() -> Scene {
     let mut scene = Scene::new();
@@ -70,12 +71,32 @@ fn create_test_scene() -> Scene {
     //     Material::PLASTER,
     // );
     // scene.add(Box::new(plaster_sphere));
+    //
+    // let glass_sphere = Sphere::new(
+    //     Vec3::new(0.0, -1.0, 0.0),
+    //     0.4,
+    //     Material::GLASS,
+    // );
+    // scene.add(Box::new(glass_sphere));
+
+    // 在场景中随机生成 300 个三角面
+    for _ in 0..300 {
+        let mut triangle = Triangle::new(
+            rand_util::random_unit_vector(),
+            rand_util::random_unit_vector(),
+            rand_util::random_unit_vector(),
+            Material::PLASTER,
+        );
+        triangle.material.diffuse = random_unit_element();
+        triangle.material.specular = random_unit_element();
+        scene.add(Box::new(triangle));
+    }
 
     scene
 }
 
 fn create_camera() -> Camera {
-    let look_from = Vec3::new(0.0, 0.0, 6.0);
+    let look_from = Vec3::new(0.0, 0.0, 4.0);
     let look_at = Vec3::new(0.0, 0.0, -1.0);
     let vup = Vec3::new(0.0, 1.0, 0.0);
 
@@ -87,8 +108,8 @@ fn main() {
     let mut scene = create_test_scene();
     let camera = create_camera();
 
-    let image_width = 320;
-    let image_height = 200;
+    let image_width = 640;
+    let image_height = 400;
 
     let start = Instant::now();
     scene.build_bvh();

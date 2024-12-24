@@ -2,7 +2,7 @@ mod bvh;
 pub mod primitive;
 
 use std::sync::Arc;
-use glam::Vec3;
+use glam::{Mat4, Vec3};
 use crate::material::Material;
 use crate::ray::Ray;
 use crate::scene::bvh::*;
@@ -43,7 +43,7 @@ impl Scene {
     }
 
     // 将 .obj 模型加载到场景中
-    pub fn add_obj(&mut self, file_path: &str) {
+    pub fn add_obj(&mut self, file_path: &str, transform: Mat4) {
         // 读取并解析 .obj 文件
         let obj_data = tobj::load_obj(file_path, &tobj::GPU_LOAD_OPTIONS)
             .expect("Failed to load .obj file");
@@ -63,6 +63,10 @@ impl Scene {
                 let v1 = Vec3::from_slice(&mesh.positions[i1 * 3..i1 * 3 + 3]);
                 let v2 = Vec3::from_slice(&mesh.positions[i2 * 3..i2 * 3 + 3]);
 
+                let v0 = transform.transform_point3(v0);
+                let v1 = transform.transform_point3(v1);
+                let v2 = transform.transform_point3(v2);
+
                 let triangle = if mesh.normals.is_empty() {
                     Triangle::new(
                         vec![v0, v1, v2], vec![], material,
@@ -71,6 +75,11 @@ impl Scene {
                     let n0 = Vec3::from_slice(&mesh.normals[i0 * 3..i0 * 3 + 3]);
                     let n1 = Vec3::from_slice(&mesh.normals[i1 * 3..i1 * 3 + 3]);
                     let n2 = Vec3::from_slice(&mesh.normals[i2 * 3..i2 * 3 + 3]);
+
+                    let n0 = transform.transform_vector3(n0).normalize();
+                    let n1 = transform.transform_vector3(n1).normalize();
+                    let n2 = transform.transform_vector3(n2).normalize();
+
                     // 创建三角形
                     Triangle::new(
                         vec![v0, v1, v2], vec![n0, n1, n2], material,

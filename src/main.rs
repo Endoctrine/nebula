@@ -7,43 +7,23 @@ mod rand_util;
 
 use std::sync::Arc;
 use std::time::Instant;
-use glam::Vec3;
+use glam::{Mat4, Vec3};
 use crate::camera::Camera;
 use crate::scene::{Scene};
 
 fn create_test_scene() -> Scene {
     let mut scene = Scene::new();
 
-    // let light = Sphere::new(
-    //     Vec3::new(0.0, 2.0, 0.0),
-    //     0.5,
-    //     Material::LUMINOUS,
-    // );
-    // scene.add(Box::new(light));
-
-    // let mirror_sphere = Sphere::new(
-    //     Vec3::new(1.0, -1.0, 0.1),
-    //     0.4,
-    //     Material::MIRROR,
-    // );
-    // scene.add(Box::new(mirror_sphere));
-    //
-    // let plaster_sphere = Sphere::new(
-    //     Vec3::new(-1.0, -1.0, -0.1),
-    //     0.4,
-    //     Material::PLASTER,
-    // );
-    // scene.add(Box::new(plaster_sphere));
-    //
-    // let glass_sphere = Sphere::new(
-    //     Vec3::new(0.0, -1.0, 0.0),
-    //     0.4,
-    //     Material::GLASS,
-    // );
-    // scene.add(Box::new(glass_sphere));
 
     // 加载测试场景
-    scene.add_obj("scenes/cornell_box/CornellBox-Mirror.obj");
+    let transform = Mat4::IDENTITY;
+    scene.add_obj("scenes/cornell_box/CornellBox-Empty-CO.obj", transform);
+    let translate = Mat4::from_translation(
+        Vec3::new(0.0, 0.5, -0.5)
+    );
+    let squeeze = Mat4::from_scale(Vec3::new(1.0, 0.5, 1.0));
+    let rotate = Mat4::from_rotation_x(std::f32::consts::PI / 4.0);
+    scene.add_obj("scenes/my_name/name.obj",  translate * rotate * squeeze);
 
     scene
 }

@@ -25,7 +25,7 @@ pub struct Material {
 
 impl Material {
     const FUZZ: f32 = 0.1; // 镜面反射的模糊因子
-    const AMBIENT_STRENGTH: f32 = 0.1; // 环境光强度因子
+    const AMBIENT_STRENGTH: f32 = 0.2; // 环境光强度因子
 
     // 石膏
     pub const PLASTER: Self = Self {

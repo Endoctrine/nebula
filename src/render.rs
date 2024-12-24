@@ -10,7 +10,7 @@ use crate::ray::Ray;
 
 const T_MIN: f32 = 0.001;
 const T_MAX: f32 = 100000.0;
-const RUSSIAN_ROULETTE: f32 = 0.9;
+const DEPTH: u32 = 5;
 const SAMPLES_PER_PIXEL: u32 = 500;
 
 pub fn render(scene: Arc<Scene>, camera: Arc<Camera>, image_width: u32, image_height: u32) -> Vec<u8> {
@@ -31,7 +31,7 @@ pub fn render(scene: Arc<Scene>, camera: Arc<Camera>, image_width: u32, image_he
                 let u = (i as f32 + shift_u) / image_width as f32;
                 let v = (j as f32 + shift_v) / image_height as f32;
                 let ray = camera.get_ray(u, v);
-                color += ray_color(&ray, &*scene);
+                color += ray_color(&ray, &*scene, 0);
             }
             color /= SAMPLES_PER_PIXEL as f32;
             color = color.clamp(Vec3::ZERO, Vec3::ONE);
@@ -47,21 +47,20 @@ pub fn render(scene: Arc<Scene>, camera: Arc<Camera>, image_width: u32, image_he
 }
 
 /// 光线颜色计算
-fn ray_color(ray: &Ray, scene: &Scene) -> Vec3 {
-    // 使用 Russian Roulette 控制递归深度
-    if rand::random::<f32>() > RUSSIAN_ROULETTE {
-        return Vec3::ZERO;
-    }
-
+fn ray_color(ray: &Ray, scene: &Scene, depth: u32) -> Vec3 {
     if let Some(hit) = scene.hit(ray, T_MIN, T_MAX) {
         let m = hit.material;
         let mut color = m.ambient_color() + m.emissive_color();
+        // 如果弹射次数大于设定的次数，就不再弹射了
+        if depth > DEPTH {
+            return color;
+        }
         // 光线照射到物体后被分散为若干光线
         let scattered_rays = m.scatter(ray, hit);
         for scattered_ray in &scattered_rays {
-            color += ray_color(&scattered_ray.ray, scene) * scattered_ray.coefficient;
+            color += ray_color(&scattered_ray.ray, scene, depth + 1) * scattered_ray.coefficient;
         }
-        return color / RUSSIAN_ROULETTE;
+        return color;
     }
 
     // 背景颜色为黑色

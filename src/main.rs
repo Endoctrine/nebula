@@ -15,12 +15,12 @@ use crate::scene::{Scene, primitive::*};
 fn create_test_scene() -> Scene {
     let mut scene = Scene::new();
 
-    let light = Sphere::new(
-        Vec3::new(0.0, 2.0, 0.0),
-        0.5,
-        Material::LUMINOUS,
-    );
-    scene.add(Box::new(light));
+    // let light = Sphere::new(
+    //     Vec3::new(0.0, 2.0, 0.0),
+    //     0.5,
+    //     Material::LUMINOUS,
+    // );
+    // scene.add(Box::new(light));
 
     // let mirror_sphere = Sphere::new(
     //     Vec3::new(1.0, -1.0, 0.1),
@@ -44,7 +44,7 @@ fn create_test_scene() -> Scene {
     // scene.add(Box::new(glass_sphere));
 
     // 加载测试场景
-    scene.add_obj("scenes/cornell_box/CornellBox-Original.obj", Material::PLASTER);
+    scene.add_obj("scenes/cornell_box/CornellBox-Original.obj");
 
     scene
 }

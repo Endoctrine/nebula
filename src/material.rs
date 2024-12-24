@@ -1,3 +1,4 @@
+use std::str::FromStr;
 use glam::Vec3;
 use crate::ray::Ray;
 use crate::scene::HitRecord;
@@ -24,6 +25,7 @@ pub struct Material {
 
 impl Material {
     const FUZZ: f32 = 0.1; // 镜面反射的模糊因子
+    const AMBIENT_STRENGTH: f32 = 0.1; // 环境光强度因子
 
     // 石膏
     pub const PLASTER: Self = Self {
@@ -72,6 +74,38 @@ impl Material {
         specular_exponent: 1000.0,
         optical_density: 1.5,
     };
+
+    pub fn from_mtl(material: &tobj::Material) -> Self {
+        let ambient = material.ambient.expect("Ambient not found");
+        let diffuse = material.diffuse.expect("Diffuse not found");
+        let specular = material.specular.expect("Specular not found");
+        let dissolve = material.dissolve.unwrap_or(0.0);
+        let specular_exponent = material.shininess.expect("Shininess not found!");
+        let optical_density = material.optical_density.expect("Optical density not found!");
+
+        let emissive = material.unknown_param.get(&String::from("Ke"));
+        let emissive = if let Some(emissive) = emissive {
+            let emissive = emissive.split(" ")
+                .filter(|x| { !x.is_empty() })
+                .map(|x| {
+                    f32::from_str(x).unwrap()
+                }).collect::<Vec<_>>();
+            Vec3::from_slice(&emissive)
+        } else {
+            Vec3::new(0.0, 0.0, 0.0)
+        };
+
+        Self {
+            ambient: Vec3::from_slice(&ambient),
+            diffuse: Vec3::from_slice(&diffuse),
+            specular: Vec3::from_slice(&specular),
+            emissive,
+            transmission_filter: Vec3::ONE,
+            dissolve,
+            specular_exponent,
+            optical_density,
+        }
+    }
 
     /// 入射光线照射到某材质被分散成若干条出射光线
     ///
@@ -126,12 +160,12 @@ impl Material {
 
     /// 计算自发光颜色
     pub fn emissive_color(&self, ray: &Ray, normal: Vec3) -> Vec3 {
-        self.emissive
+        self.emissive * 5.0
     }
 
     /// 计算材质的环境光颜色
     pub fn ambient_color(&self) -> Vec3 {
-        self.ambient * (1.0 - self.dissolve)
+        self.ambient * (1.0 - self.dissolve) * Self::AMBIENT_STRENGTH
     }
 
     /// 计算折射光线的方向

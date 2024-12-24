@@ -7,6 +7,7 @@ use crate::material::Material;
 use crate::ray::Ray;
 use crate::scene::bvh::*;
 use primitive::Triangle;
+use crate::material;
 
 // 定义一个表示光线与物体碰撞的 trait
 pub trait Hittable {
@@ -43,11 +44,12 @@ impl Scene {
     }
 
     // 将 .obj 模型加载到场景中
-    pub fn add_obj(&mut self, file_path: &str, default_material: Material) {
+    pub fn add_obj(&mut self, file_path: &str) {
         // 读取并解析 .obj 文件
         let obj_data = tobj::load_obj(file_path, &tobj::GPU_LOAD_OPTIONS)
             .expect("Failed to load .obj file");
-        let (models, _materials) = obj_data;
+        let (models, materials) = obj_data;
+        let materials = materials.expect("Fail to load .mtl file");
 
         // 将 .obj 中的每个面转换为三角形
         for mesh in models.iter().map(|model| { &model.mesh }) {
@@ -55,12 +57,14 @@ impl Scene {
                 let i0 = index[0] as usize;
                 let i1 = index[1] as usize;
                 let i2 = index[2] as usize;
+                let material_id = mesh.material_id.expect("Material id not found!");
+                let material = Material::from_mtl(&materials[material_id]);
                 // 转换为 Vec3
                 let vertex0 = Vec3::from_slice(&mesh.positions[i0 * 3..i0 * 3 + 3]);
                 let vertex1 = Vec3::from_slice(&mesh.positions[i1 * 3..i1 * 3 + 3]);
                 let vertex2 = Vec3::from_slice(&mesh.positions[i2 * 3..i2 * 3 + 3]);
                 // 创建三角形
-                let triangle = Triangle::new(vertex0, vertex1, vertex2, default_material);
+                let triangle = Triangle::new(vertex0, vertex1, vertex2, material);
                 self.add(Box::new(triangle));
             }
         }

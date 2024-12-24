@@ -50,7 +50,7 @@ pub fn render(scene: Arc<Scene>, camera: Arc<Camera>, image_width: u32, image_he
 fn ray_color(ray: &Ray, scene: &Scene, depth: u32) -> Vec3 {
     if let Some(hit) = scene.hit(ray, T_MIN, T_MAX) {
         let m = hit.material;
-        let mut color = m.ambient_color() + m.emissive_color(ray, hit.normal);
+        let mut color = m.ambient_color() + m.emissive_color();
         // 如果弹射次数大于设定的次数，就不再弹射了
         if depth > DEPTH {
             return color;

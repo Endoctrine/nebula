@@ -9,8 +9,7 @@ use std::sync::Arc;
 use std::time::Instant;
 use glam::Vec3;
 use crate::camera::Camera;
-use crate::material::Material;
-use crate::scene::{Scene, primitive::*};
+use crate::scene::{Scene};
 
 fn create_test_scene() -> Scene {
     let mut scene = Scene::new();

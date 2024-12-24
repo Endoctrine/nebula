@@ -54,28 +54,52 @@ impl Hittable for Sphere {
     }
 }
 
-/// 三角面，按照 v0, v1, v2 顺序使用右手法则确定法线方向
+/// 三角面
 pub struct Triangle {
     pub v0: Vec3,
     pub v1: Vec3,
     pub v2: Vec3,
-    pub normal: Vec3,
+    pub n0: Vec3,
+    pub n1: Vec3,
+    pub n2: Vec3,
     pub material: Material,
 }
 
 impl Triangle {
-    pub fn new(v0: Vec3, v1: Vec3, v2: Vec3, material: Material) -> Self {
+    pub fn new(vertices: Vec<Vec3>,
+               normals: Vec<Vec3>,
+               material: Material) -> Self {
+        assert_eq!(vertices.len(), 3);
+        let (v0, v1, v2) = (vertices[0], vertices[1], vertices[2]);
         let edge1 = v1 - v0;
         let edge2 = v2 - v0;
-        let normal = edge1.cross(edge2).normalize();
-        Self { v0, v1, v2, normal, material }
+
+        if normals.is_empty() {
+            // 没有提供顶点法向的情况下，按 v0 v1 v2 顺序使用右手法则确定法线方向
+            let normal = edge1.cross(edge2).normalize();
+            Self {
+                v0,
+                v1,
+                v2,
+                n0: normal,
+                n1: normal,
+                n2: normal,
+                material,
+            }
+        } else {
+            assert_eq!(normals.len(), 3);
+            let (n0, n1, n2) = (normals[0], normals[1], normals[2]);
+            Self { v0, v1, v2, n0, n1, n2, material }
+        }
     }
 }
 
 impl Hittable for Triangle {
     /// 使用 Moller-Trumbore 方法判定光线与三角面的相交情况，
-    /// 即解方程 `[-ray.direction, edge1, edge2][t, u, v]^T=[ray.origin-v0]`。
-    /// 使用 Cramer's Rule 求解
+    /// 即解方程 `[-ray.direction, edge1, edge2][t, v, w]^T=[ray.origin-v0]`。
+    /// 使用 Cramer's Rule 求解。
+    ///
+    /// 交点 `p` 满足 `p=u*v0+v*v1+w*v2`，其中 `u+v+w=1`
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let edge1 = self.v1 - self.v0;
         let edge2 = self.v2 - self.v0;
@@ -92,19 +116,19 @@ impl Hittable for Triangle {
 
         // s.dot(h) = det([-ray.direction, ray.origin - v0, edge2])
         let s = ray.origin - self.v0;
-        let u = f * s.dot(h);
+        let v = f * s.dot(h);
 
-        // 检查 u 参数是否在 [0, 1] 范围内
-        if u < 0.0 || u > 1.0 {
+        // 检查参数 v 是否在 [0, 1] 范围内
+        if v < 0.0 || v > 1.0 {
             return None;
         }
 
         // ray.direction.dot(q) = det([-ray.direction, edge1, ray.origin - v0])
         let q = s.cross(edge1);
-        let v = f * ray.direction.dot(q);
+        let w = f * ray.direction.dot(q);
 
-        // 检查 v 参数是否在 [0, 1] 范围内，且 u + v <= 1
-        if v < 0.0 || u + v > 1.0 {
+        // 检查参数 w 是否在 [0, 1] 范围内，且 v + w <= 1
+        if w < 0.0 || v + w > 1.0 {
             return None;
         }
 
@@ -117,10 +141,12 @@ impl Hittable for Triangle {
         }
 
         let hit_point = ray.at(t);
+        // 使用重心坐标进行插值
+        let normal = (1.0 - v - w) * self.n0 + v * self.n1 + w * self.n2;
 
         Some(HitRecord {
             point: hit_point,
-            normal: self.normal,
+            normal,
             t,
             material: self.material,
         })

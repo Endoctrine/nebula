@@ -7,7 +7,6 @@ use crate::material::Material;
 use crate::ray::Ray;
 use crate::scene::bvh::*;
 use primitive::Triangle;
-use crate::material;
 
 // 定义一个表示光线与物体碰撞的 trait
 pub trait Hittable {
@@ -60,11 +59,23 @@ impl Scene {
                 let material_id = mesh.material_id.expect("Material id not found!");
                 let material = Material::from_mtl(&materials[material_id]);
                 // 转换为 Vec3
-                let vertex0 = Vec3::from_slice(&mesh.positions[i0 * 3..i0 * 3 + 3]);
-                let vertex1 = Vec3::from_slice(&mesh.positions[i1 * 3..i1 * 3 + 3]);
-                let vertex2 = Vec3::from_slice(&mesh.positions[i2 * 3..i2 * 3 + 3]);
-                // 创建三角形
-                let triangle = Triangle::new(vertex0, vertex1, vertex2, material);
+                let v0 = Vec3::from_slice(&mesh.positions[i0 * 3..i0 * 3 + 3]);
+                let v1 = Vec3::from_slice(&mesh.positions[i1 * 3..i1 * 3 + 3]);
+                let v2 = Vec3::from_slice(&mesh.positions[i2 * 3..i2 * 3 + 3]);
+
+                let triangle = if mesh.normals.is_empty() {
+                    Triangle::new(
+                        vec![v0, v1, v2], vec![], material,
+                    )
+                } else {
+                    let n0 = Vec3::from_slice(&mesh.normals[i0 * 3..i0 * 3 + 3]);
+                    let n1 = Vec3::from_slice(&mesh.normals[i1 * 3..i1 * 3 + 3]);
+                    let n2 = Vec3::from_slice(&mesh.normals[i2 * 3..i2 * 3 + 3]);
+                    // 创建三角形
+                    Triangle::new(
+                        vec![v0, v1, v2], vec![n0, n1, n2], material,
+                    )
+                };
                 self.add(Box::new(triangle));
             }
         }

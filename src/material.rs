@@ -159,7 +159,7 @@ impl Material {
     }
 
     /// 计算自发光颜色
-    pub fn emissive_color(&self, ray: &Ray, normal: Vec3) -> Vec3 {
+    pub fn emissive_color(&self) -> Vec3 {
         self.emissive * 5.0
     }
 

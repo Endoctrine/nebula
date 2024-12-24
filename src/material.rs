@@ -81,7 +81,7 @@ impl Material {
         let specular = material.specular.expect("Specular not found");
         let dissolve = material.dissolve.unwrap_or(0.0);
         let specular_exponent = material.shininess.expect("Shininess not found!");
-        let optical_density = material.optical_density.expect("Optical density not found!");
+        let optical_density = material.optical_density.unwrap_or(1.0);
 
         let emissive = material.unknown_param.get(&String::from("Ke"));
         let emissive = if let Some(emissive) = emissive {

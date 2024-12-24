@@ -43,7 +43,7 @@ fn create_test_scene() -> Scene {
     // scene.add(Box::new(glass_sphere));
 
     // 加载测试场景
-    scene.add_obj("scenes/cornell_box/CornellBox-Original.obj");
+    scene.add_obj("scenes/cornell_box/CornellBox-Mirror.obj");
 
     scene
 }

@@ -38,7 +38,6 @@ fn create_camera() -> Camera {
     Camera::new(look_from, look_at, vup, 60.0, 16.0 / 10.0, 4.0, 0.0)
 }
 
-
 fn main() {
     let mut scene = create_test_scene();
     let camera = create_camera();
@@ -48,8 +47,15 @@ fn main() {
 
     let start = Instant::now();
     scene.build_bvh();
-    let image_data = render::render(Arc::new(scene), Arc::new(camera), image_width, image_height);
+    let image_data = render::render(
+        Arc::new(scene),
+        Arc::new(camera),
+        image_width,
+        image_height,
+        5,
+        100,
+    );
     let duration = start.elapsed();
-    println!("Used {:?} to render 1 image(time for building bvh included).", duration);
+    println!("{:?} for rendering 1 image (time for building bvh included).", duration);
     render::save_image_as_png(image_data, image_width, image_height, "output.png");
 }

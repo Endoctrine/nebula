@@ -1,4 +1,4 @@
-use glam::Vec3;
+use glam::{Vec2, Vec3};
 use crate::material::Material;
 use crate::ray::Ray;
 use crate::scene::{HitRecord, Hittable};
@@ -56,40 +56,59 @@ impl Hittable for Sphere {
 
 /// 三角面
 pub struct Triangle {
-    pub v0: Vec3,
+    pub v0: Vec3, // 顶点
     pub v1: Vec3,
     pub v2: Vec3,
-    pub n0: Vec3,
+    pub n0: Vec3, // 顶点法向
     pub n1: Vec3,
     pub n2: Vec3,
+    pub uv0: Vec2, // 顶点贴图坐标
+    pub uv1: Vec2,
+    pub uv2: Vec2,
     pub material: Material,
 }
 
 impl Triangle {
     pub fn new(vertices: Vec<Vec3>,
                normals: Vec<Vec3>,
+               texcoords: Vec<Vec2>,
                material: Material) -> Self {
         assert_eq!(vertices.len(), 3);
         let (v0, v1, v2) = (vertices[0], vertices[1], vertices[2]);
         let edge1 = v1 - v0;
         let edge2 = v2 - v0;
 
-        if normals.is_empty() {
+        let normals = if normals.is_empty() {
             // 没有提供顶点法向的情况下，按 v0 v1 v2 顺序使用右手法则确定法线方向
             let normal = edge1.cross(edge2).normalize();
-            Self {
-                v0,
-                v1,
-                v2,
-                n0: normal,
-                n1: normal,
-                n2: normal,
-                material,
-            }
+            vec![normal, normal, normal]
         } else {
             assert_eq!(normals.len(), 3);
-            let (n0, n1, n2) = (normals[0], normals[1], normals[2]);
-            Self { v0, v1, v2, n0, n1, n2, material }
+            normals
+        };
+
+        let texcoords = if texcoords.is_empty() {
+            // 没有提供纹理坐标的情况下，全都写 0
+            let uv = Vec2::new(0.0, 0.0);
+            vec![uv, uv, uv]
+        } else {
+            assert_eq!(texcoords.len(), 3);
+            texcoords
+        };
+
+        let (n0, n1, n2) = (normals[0], normals[1], normals[2]);
+        let (uv0, uv1, uv2) = (texcoords[0], texcoords[1], texcoords[2]);
+        Self {
+            v0,
+            v1,
+            v2,
+            n0,
+            n1,
+            n2,
+            uv0,
+            uv1,
+            uv2,
+            material,
         }
     }
 }
@@ -142,13 +161,15 @@ impl Hittable for Triangle {
 
         let hit_point = ray.at(t);
         // 使用重心坐标进行插值
-        let normal = (1.0 - v - w) * self.n0 + v * self.n1 + w * self.n2;
+        let u = 1.0 - v - w;
+        let normal = u * self.n0 + v * self.n1 + w * self.n2;
+        let uv = v * self.uv0 + v * self.uv1 + w * self.uv2;
 
         Some(HitRecord {
             point: hit_point,
             normal,
             t,
-            material: self.material,
+            material: self.material.sample(uv[0], uv[1]),
         })
     }
 

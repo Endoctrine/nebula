@@ -3,6 +3,7 @@ use glam::Vec3;
 use crate::ray::Ray;
 use crate::scene::HitRecord;
 use crate::rand_util;
+use crate::texture::Texture;
 
 /// 光线经物体表面作用后出射的光线
 #[derive(Debug, Copy, Clone)]
@@ -15,6 +16,7 @@ pub struct ScatteredRay {
 pub struct Material {
     pub ambient: Vec3, // 环境光，分量属于[0.0, 1.0]
     pub diffuse: Vec3, // 漫反射，分量属于[0.0, 1.0]
+    pub diffuse_texture: Option<Texture>, // 漫反射贴图
     pub specular: Vec3, // 镜面反射，分量属于[0.0, 1.0]
     pub emissive: Vec3, // 自发光，分量属于[0.0, 1.0)
     pub transmission_filter: Vec3, // 透光颜色，分量属于[0.0, 1.0]
@@ -31,6 +33,7 @@ impl Material {
     pub const PLASTER: Self = Self {
         ambient: Vec3::new(0.1, 0.1, 0.1),
         diffuse: Vec3::new(0.8, 0.8, 0.8),
+        diffuse_texture: None,
         specular: Vec3::new(0.8, 0.8, 0.8),
         emissive: Vec3::ZERO,
         transmission_filter: Vec3::ZERO,
@@ -43,6 +46,7 @@ impl Material {
     pub const LUMINOUS: Self = Self {
         ambient: Vec3::ZERO,
         diffuse: Vec3::ZERO,
+        diffuse_texture: None,
         specular: Vec3::ZERO,
         emissive: Vec3::ONE,
         transmission_filter: Vec3::ZERO,
@@ -55,6 +59,7 @@ impl Material {
     pub const MIRROR: Self = Self {
         ambient: Vec3::ZERO,
         diffuse: Vec3::ZERO,
+        diffuse_texture: None,
         specular: Vec3::new(2.0, 2.0, 2.0),
         emissive: Vec3::ZERO,
         transmission_filter: Vec3::ZERO,
@@ -67,6 +72,7 @@ impl Material {
     pub const GLASS: Self = Self {
         ambient: Vec3::ZERO,
         diffuse: Vec3::ZERO,
+        diffuse_texture: None,
         specular: Vec3::new(2.0, 2.0, 2.0),
         emissive: Vec3::ZERO,
         transmission_filter: Vec3::ONE,
@@ -75,7 +81,7 @@ impl Material {
         optical_density: 1.5,
     };
 
-    pub fn from_mtl(material: &tobj::Material) -> Self {
+    pub fn from_mtl(material: &tobj::Material, base_path: &str) -> Self {
         let ambient = material.ambient.expect("Ambient not found");
         let diffuse = material.diffuse.expect("Diffuse not found");
         let specular = material.specular.expect("Specular not found");
@@ -95,9 +101,16 @@ impl Material {
             Vec3::new(0.0, 0.0, 0.0)
         };
 
+        let diffuse_texture = if let Some(filename) = &material.diffuse_texture {
+            Some(Texture::load_from_file(&format!("{}/{}", base_path, filename)))
+        } else {
+            None
+        };
+
         Self {
             ambient: Vec3::from_slice(&ambient),
             diffuse: Vec3::from_slice(&diffuse),
+            diffuse_texture,
             specular: Vec3::from_slice(&specular),
             emissive,
             transmission_filter: Vec3::ONE,
@@ -105,6 +118,15 @@ impl Material {
             specular_exponent,
             optical_density,
         }
+    }
+
+    /// 在材质纹理上进行采样，其中 u，v 属于 [0.0, 1.0]
+    pub fn sample(&self, u: f32, v: f32) -> Self {
+        let mut sampled_material = self.clone();
+        if let Some(diffuse_texture) = sampled_material.diffuse_texture {
+            sampled_material.diffuse *= diffuse_texture.sample(u, v);
+        }
+        sampled_material
     }
 
     /// 入射光线照射到某材质被分散成若干条出射光线

@@ -4,6 +4,7 @@ mod camera;
 mod render;
 mod material;
 mod rand_util;
+mod texture;
 
 use std::sync::Arc;
 use std::time::Instant;
@@ -14,16 +15,17 @@ use crate::scene::{Scene};
 fn create_test_scene() -> Scene {
     let mut scene = Scene::new();
 
-
+    scene.add_obj("scenes/my_name/CornellBox-Empty-Name.obj", Mat4::IDENTITY);
+    // scene.add_obj("scenes/cryo_slime/cryo_slime.obj", Mat4::IDENTITY);
     // 加载测试场景
-    let transform = Mat4::IDENTITY;
-    scene.add_obj("scenes/cornell_box/CornellBox-Empty-CO.obj", transform);
-    let translate = Mat4::from_translation(
-        Vec3::new(0.0, 0.5, -0.5)
-    );
-    let squeeze = Mat4::from_scale(Vec3::new(1.0, 0.5, 1.0));
-    let rotate = Mat4::from_rotation_x(std::f32::consts::PI / 4.0);
-    scene.add_obj("scenes/my_name/name.obj",  translate * rotate * squeeze);
+    // let transform = Mat4::IDENTITY;
+    // scene.add_obj("scenes/cornell_box/CornellBox-Empty-CO.obj", transform);
+    // let translate = Mat4::from_translation(
+    //     Vec3::new(0.0, 0.5, -0.5)
+    // );
+    // let scale = Mat4::from_scale(Vec3::new(1.2, 0.6, 1.2));
+    // let rotate = Mat4::from_rotation_x(std::f32::consts::PI / 4.0);
+    // scene.add_obj("scenes/my_name/name.obj", translate * rotate * scale);
 
     scene
 }

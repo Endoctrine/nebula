@@ -3,6 +3,7 @@ use std::io::Write;
 use std::sync::{Arc, Mutex};
 use rayon::prelude::*;
 use glam::Vec3;
+use image::{Rgb, RgbImage};
 use crate::scene::Scene;
 use crate::camera::Camera;
 use crate::rand_util::random_unit_tent;
@@ -11,7 +12,7 @@ use crate::ray::Ray;
 const T_MIN: f32 = 0.001;
 const T_MAX: f32 = 100000.0;
 const DEPTH: u32 = 5;
-const SAMPLES_PER_PIXEL: u32 = 500;
+const SAMPLES_PER_PIXEL: u32 = 50;
 
 pub fn render(scene: Arc<Scene>, camera: Arc<Camera>, image_width: u32, image_height: u32) -> Vec<u8> {
     let image_data_raw = vec![0.0; (image_width * image_height * 3) as usize];
@@ -75,5 +76,22 @@ pub fn save_image_as_ppm(image_data: Vec<u8>, width: u32, height: u32, filename:
     file.write_all(&image_data).unwrap();
 }
 
+/// 将渲染结果保存为 png 文件
+pub fn save_image_as_png(image_data: Vec<u8>, width: u32, height: u32, filename: &str) {
+    let mut img = RgbImage::new(width, height);
 
+    for y in 0..height {
+        for x in 0..width {
+            let index = ((y * width + x) * 3) as usize;
+            let pixel = Rgb([
+                image_data[index],
+                image_data[index + 1],
+                image_data[index + 2],
+            ]);
+            img.put_pixel(x, y, pixel);
+        }
+    }
+
+    img.save(filename).expect("Failed to save PNG image");
+}
 

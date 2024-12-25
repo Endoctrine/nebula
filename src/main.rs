@@ -51,5 +51,5 @@ fn main() {
     let image_data = render::render(Arc::new(scene), Arc::new(camera), image_width, image_height);
     let duration = start.elapsed();
     println!("Used {:?} to render 1 image(time for building bvh included).", duration);
-    render::save_image_as_ppm(image_data, image_width, image_height, "output.ppm");
+    render::save_image_as_png(image_data, image_width, image_height, "output.png");
 }

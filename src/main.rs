@@ -68,6 +68,7 @@ fn main() {
         println!("Start to render scene_{scene_number}.");
         let start = Instant::now();
         scene.build_bvh();
+        println!("Build BVH for {} triangles.", scene.objects.len());
         let image_data = render::render(
             Arc::new(scene),
             camera.clone(),

@@ -28,6 +28,7 @@ pub struct Material {
 impl Material {
     const FUZZ: f32 = 0.1; // 镜面反射的模糊因子
     const AMBIENT_STRENGTH: f32 = 0.2; // 环境光强度因子
+    const EMISSIVE_STRENGTH: f32 = 5.0; // 自发光强度因子
 
     // 石膏
     pub const PLASTER: Self = Self {
@@ -182,7 +183,7 @@ impl Material {
 
     /// 计算自发光颜色
     pub fn emissive_color(&self) -> Vec3 {
-        self.emissive * 5.0
+        self.emissive * Self::EMISSIVE_STRENGTH
     }
 
     /// 计算材质的环境光颜色

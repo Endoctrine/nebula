@@ -1,0 +1,25 @@
+newmtl glass
+Ka 0.01 0.01 0.01
+Kd 0.01 0.01 0.01
+Ks 0.80 0.80 0.80
+Tf 1.00 1.00 1.00
+d 0.9
+Ns 800
+Ni 1.8
+illum 7
+
+newmtl mirror
+Ka 0.01 0.01 0.01
+Kd 0.01 0.01 0.01
+Ks 0.95 0.95 0.95
+Ns 1000
+illum 5
+
+newmtl plaster
+Ns 10.0000
+Ni 1.0000
+illum 2
+Ka 0.725 0.71 0.68
+Kd 0.725 0.71 0.68
+Ks 0 0 0
+Ke 0 0 0
